@@ -20,6 +20,10 @@ class ParsingTest(unittest.TestCase):
         # make sure decode is happy
         ex.parse()
 
+    def testfileParser(self):
+        ex = h26x_parser.H26xParser('../v/input/small_bunny_1080p_30fps_h264_keyframe_each_one_second.h264', verbose=False)
+        ex.parse()
+
 
 if __name__ == "__main__":
     unittest.main()

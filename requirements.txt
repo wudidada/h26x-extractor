@@ -1,3 +1,4 @@
 docopt
 tabulate
 bitstring
+cryptography

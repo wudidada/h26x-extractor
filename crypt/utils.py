@@ -3,7 +3,7 @@ import hashlib
 import rust_utils
 
 
-def nalu_decode(nalu_data):
+def nalu_decode(nalu_data: bytes) -> bytes:
     """
     Get the Rbsp from the NAL unit.
     """
@@ -26,7 +26,7 @@ def nalu_decode(nalu_data):
 PREVENTION_THREE_BYTE = {b"\x00\x00\x00", b"\x00\x00\x01", b"\x00\x00\x02", b"\x00\x00\x03"}
 
 
-def nalu_encode(data):
+def nalu_encode(data: bytes) -> bytes:
     return rust_utils.nalu_encode(data)
     data_raw = data
     data_enc = bytearray()

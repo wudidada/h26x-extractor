@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from bitstring import BitStream
-from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from crypt.crypter import encrypt, decrypt
@@ -99,8 +99,8 @@ class AesCBCEncryptor(Encryptor):
     name = 'aes_cbc'
     unencrypted_len = 8
 
-    key = Fernet.generate_key()
-    f = Fernet(key)
+    key = os.urandom(16)
+    iv = os.urandom(16)
 
     def __init__(self):
         super().__int__()
@@ -112,10 +112,22 @@ class AesCBCEncryptor(Encryptor):
         return nalu_type in (5,)
 
     def do_encrypt(self, data):
-        return self.f.encrypt(data)
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv))
+        encryptor = cipher.encryptor()
+        padder = padding.PKCS7(algorithms.AES.block_size).padder()
+        padded_data = padder.update(data) + padder.finalize()
+        return encryptor.update(padded_data) + encryptor.finalize()
 
     def do_decrypt(self, data):
-        return self.f.decrypt(data)
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv))
+        decryptor = cipher.decryptor()
+        plaintext_padded = decryptor.update(data)
+        plaintext_padded += decryptor.finalize()
+        unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+
+        unpadded = unpadder.update(plaintext_padded)
+        unpadded += unpadder.finalize()
+        return unpadded
 
 
 class AesCTREncryptor(Encryptor):
@@ -149,7 +161,7 @@ class AesCTREncryptor(Encryptor):
 
 class SM4CTREncryptor(Encryptor):
     name = 'sm4_ctr'
-    unencrypted_len = 10
+    unencrypted_len = 8
 
     key = os.urandom(16)
     iv = os.urandom(16)
@@ -164,7 +176,7 @@ class SM4CTREncryptor(Encryptor):
         first_mb_in_slice = b.read('ue')
         slice_type = b.read('ue')
         # print(first_mb_in_slice, slice_type)
-        return slice_type in (2, 7, 4, 9) or slice_type in (1, 6)
+        return slice_type in (2, 7, 4, 9)
 
     def do_encrypt(self, data):
         cipher = Cipher(algorithms.SM4(self.key), modes.CTR(self.iv))
@@ -177,23 +189,32 @@ class SM4CTREncryptor(Encryptor):
         return decryptor.update(data) + decryptor.finalize()
 
 
+def enc_and_dec(src_file, enc_file, dec_file, encryptor):
+    start = datetime.now()
+    encrypt(src_file, enc_file, encryptor.encrypt)
+    print(f'encrypt cost {(datetime.now() - start).total_seconds()}')
+    assert not utils.is_same_file(src_file, enc_file)
+
+    start = datetime.now()
+    decrypt(enc_file, dec_file, encryptor.decrypt)
+    print(f'decrypt cost {(datetime.now() - start).total_seconds()}')
+
+    encryptor.dump_info()
+    assert utils.is_same_file(src_file, dec_file)
+
 def main():
-    f = Path('../v/input/small_bunny_1080p_30fps_h264_keyframe_each_one_second.h264')
-    enc_file = Path('../v/output/small_bunny_1080p_30fps_h264_keyframe_each_one_second_aes.h264')
-    dec_file = Path('../v/output/small_bunny_1080p_30fps_h264_keyframe_each_one_second_unaes.h264')
+    source_video_dir = Path('/Users/jusbin/Movies/vlc')
+    out_dir = Path('/Users/jusbin/Movies/out')
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # encryptors = [AesCBCEncryptor(), AesCTREncryptor(), SM4CTREncryptor()]
+    encryptors = [SM4CTREncryptor()]
 
-    encryptors = [AesCBCEncryptor(), AesCTREncryptor(), SM4CTREncryptor()]
-    for encryptor in encryptors:
-        start = datetime.now()
-        encrypt(f, enc_file, encryptor.encrypt)
-        print(f'encrypt cost {(datetime.now() - start).total_seconds()}')
-
-        start = datetime.now()
-        decrypt(enc_file, dec_file, encryptor.decrypt)
-        print(f'decrypt cost {(datetime.now() - start).total_seconds()}')
-
-        encryptor.dump_info()
-        assert utils.is_same_file(f, dec_file)
+    for video in source_video_dir.glob('*.h264'):
+        src_file = video
+        for encryptor in encryptors:
+            enc_file = out_dir / (video.stem + f'_{encryptor.name}_enc.h264')
+            dec_file = out_dir / (video.stem + f'_{encryptor.name}_dec.h264')
+            enc_and_dec(src_file, enc_file, dec_file, encryptor)
 
 
 if __name__ == '__main__':

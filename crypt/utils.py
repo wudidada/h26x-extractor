@@ -8,42 +8,10 @@ def nalu_decode(nalu_data: bytes) -> bytes:
     Get the Rbsp from the NAL unit.
     """
     return rust_utils.nalu_decode(nalu_data)
-    rbsp_enc = nalu_data
-    rbsp_dec = bytearray()
-    i = 0
-    i_max = len(rbsp_enc)
-    while i < i_max:
-        if (i + 2 < i_max) and (rbsp_enc[i] == 0 and rbsp_enc[i + 1] == 0 and rbsp_enc[i + 2] == 3):
-            rbsp_dec.append(rbsp_enc[i])
-            rbsp_dec.append(rbsp_enc[i + 1])
-            i += 2
-        else:
-            rbsp_dec.append(rbsp_enc[i])
-        i += 1
-    return rbsp_dec
-
-
-PREVENTION_THREE_BYTE = {b"\x00\x00\x00", b"\x00\x00\x01", b"\x00\x00\x02", b"\x00\x00\x03"}
 
 
 def nalu_encode(data: bytes) -> bytes:
     return rust_utils.nalu_encode(data)
-    data_raw = data
-    data_enc = bytearray()
-
-    i = 0
-    i_max = len(data_raw)
-    while i < i_max:
-        if (i + 2 < i_max) and (data_raw[i] == 0 and data_raw[i + 1] == 0 and data_raw[i + 2] < 4):
-            data_enc.append(data_raw[i])
-            data_enc.append(data_raw[i + 1])
-            data_enc.append(3)
-            data_enc.append(data_raw[i + 2])
-            i += 2
-        else:
-            data_enc.append(data_raw[i])
-        i += 1
-    return data_enc
 
 
 def read_file(filename):

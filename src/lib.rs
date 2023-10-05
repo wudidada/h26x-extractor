@@ -37,8 +37,7 @@ fn nalu_encode(py: Python, data: &PyBytes) -> Py<PyAny> {
             res.push(0);
             res.push(0);
             res.push(3);
-            res.push(data[i + 2]);
-            i += 3;
+            i += 2;
         } else {
             res.push(data[i]);
             i += 1;

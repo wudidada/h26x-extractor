@@ -25,6 +25,15 @@ class NaluUtilsTest(unittest.TestCase):
         self.assertTrue(nalu_utils.more_rbsp_data(data))
         self.assertEqual(data.pos, 14)
 
+    def test_create_matrix(self):
+        m = nalu_utils.create_matrix(2, 3, 4)
+        self.assertEqual(len(m), 2)
+        self.assertEqual(len(m[0]), 3)
+        self.assertEqual(len(m[0][0]), 4)
+
+        m = nalu_utils.create_matrix(7)
+        self.assertEqual(len(m), 7)
+
 
 if __name__ == "__main__":
     unittest.main()

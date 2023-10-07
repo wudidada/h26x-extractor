@@ -176,7 +176,7 @@ class SM4CTREncryptor(Encryptor):
         first_mb_in_slice = b.read('ue')
         slice_type = b.read('ue')
         # print(first_mb_in_slice, slice_type)
-        return slice_type in (2, 7, 4, 9)
+        return slice_type in (2, 7, 4, 9) or slice_type in (0, 5) or slice_type in (1, 6)
 
     def do_encrypt(self, data):
         cipher = Cipher(algorithms.SM4(self.key), modes.CTR(self.iv))

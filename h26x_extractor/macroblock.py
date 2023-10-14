@@ -1,5 +1,8 @@
 # Name of mb_type
 # I slice, 0-25
+from enum import Enum
+
+import numpy as np
 from bitstring import BitStream
 
 from h26x_extractor.nalu_utils import create_matrix
@@ -275,11 +278,18 @@ CODE_NUM_MAP_TYPE_0_3 = {
     15: (9, 9),
 }
 
+class IntraChromaPredMode(Enum):
+    DC: 0
+    Horizontal: 1
+    Vertical: 2
+    Plane: 3
+
 
 class MacroBlock:
 
-    def __init__(self, mb_type=None, slice_type=None, start_pos=None, end_pos=None, real_mb_type=None):
+    def __init__(self, mb_type=None, slice_type=None, start_pos=None, end_pos=None, real_mb_type=None, CurrMbAddr=None):
         self.slice_type = slice_type
+        self.CurrMbAddr = CurrMbAddr
         self.mb_type_clear = None
         if real_mb_type is not None:
             self.mb_type = real_mb_type
@@ -319,7 +329,7 @@ class MacroBlock:
         self.rem_intra8x8_pred_mode = create_matrix(4)
         self.intra_chroma_pred_mode = None
 
-        self.ChromaArrayType = 0
+        self.ChromaArrayType = 1
 
         self.i16x16DClevel = create_matrix(16)              # DCT变换后的直流系数
         self.i16x16AClevel = create_matrix(16, 16)          # DCT变换后的交流系数
@@ -327,6 +337,8 @@ class MacroBlock:
         self.level8x8 = create_matrix(4, 64)                # 存储亮度的残差数据
         self.ChromaDCLevel = create_matrix(2, 16)           # 存储DC色度u和v的残差数据
         self.ChromaACLevel = create_matrix(2, 16, 15)       # 存储AC色度u和v的残差数据
+
+        self.TotalCoeff = create_matrix(16)                 # 存储亮度的非零系数个数
 
     def MbPartPredMode(self, mode):
         return self.macroblock_table()[mode]
@@ -348,13 +360,18 @@ class MacroBlock:
                 return Intra_4x4, None, CodedBlockPatternLuma, CodedBlockPatternChroma
             elif self.mb_type == 0 and self.transform_size_8x8_flag == 1:
                 return Intra_8x8, None, CodedBlockPatternLuma, CodedBlockPatternChroma
+            raise ValueError(f'mb_type not match: slice_type={self.slice_type}, mb_type={self.mb_type}')
         elif self.slice_type == 'SI':
             # Equation 7-35
             CodedBlockPatternChroma, CodedBlockPatternLuma = self.get_coded_block_pattern()
             return Intra_4x4, None, CodedBlockPatternLuma, CodedBlockPatternChroma
         elif self.slice_type in ['P', 'SP']:
+            if self.mb_type not in MB_TYPE_TABLE_P:
+                raise ValueError(f'mb_type not match: slice_type={self.slice_type}, mb_type={self.mb_type}')
             return MB_TYPE_TABLE_P[self.mb_type]
         elif self.slice_type == 'B':
+            if self.mb_type not in MB_TYPE_TABLE_B:
+                raise ValueError(f'mb_type not match: slice_type={self.slice_type}, mb_type={self.mb_type}')
             return MB_TYPE_TABLE_B[self.mb_type]
 
     def get_coded_block_pattern(self):
@@ -420,11 +437,14 @@ class MacroBlock:
         elif ChromaArrayType in [0, 3]:
             return CODE_NUM_MAP_TYPE_0_3[code_num][coded_block_pattern]
 
-    def te(self, s: BitStream, value_range):
-        if value_range <= 0:
-            return 0
-        elif range == 1:
-            return 1 if s.read("uint:1") == 0 else 0
-        else:
-            return s.read("ue")
+    def is_ac_residual_empty(self):
+        return not np.any(self.i16x16AClevel)
 
+
+def InverseRasterScan(a, b, c, d, e):
+    if e == 0:
+        return int((a % (d // b)) * b)
+    elif e == 1:
+        return int((a // (d // b)) * c)
+
+    raise ValueError("e must be 0 or 1")

@@ -34,4 +34,6 @@ def create_matrix(*dimensions, default_value=0, default_type=int):
     """
     create multiple v matrix
     """
+    if default_value == 0:
+        return np.zeros(tuple(dimensions), default_type)
     return np.full(tuple(dimensions), default_value, default_type)

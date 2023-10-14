@@ -49,3 +49,10 @@ class MacroblockTest(unittest.TestCase):
         # 3 B_Bi_8x8 1 BiPred 8 8
         block = MacroBlock(slice_type='B', real_mb_type=B_Bi_8x8)
         self.assertEqual(block.NumMbPart(3), 1)
+
+    def test_InverseRasterScan(self):
+        for blkIdx in range(16):
+            x = InverseRasterScan(blkIdx // 4, 8, 8, 16, 0) + InverseRasterScan(blkIdx % 4, 4, 4, 8, 0)
+            y = InverseRasterScan(blkIdx // 4, 8, 8, 16, 1) + InverseRasterScan(blkIdx % 4, 4, 4, 8, 1)
+
+            print(blkIdx, x, y)

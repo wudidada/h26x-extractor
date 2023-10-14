@@ -226,12 +226,14 @@ class H26xParser:
                 aud = nalutypes.AUD(rbsp_payload_bs, self.verbose)
                 self.__call("aud", rbsp_payload_bs)
             elif type == nalutypes.NAL_UNIT_TYPE_CODED_SLICE_NON_IDR:
+                rbsp_payload_bs = bytearray(self.getRSBP(start, end + 1))
                 nalu_slice = nalutypes.CodedSliceNonIDR(
-                    rbsp_payload_bs, nalu_sps, nalu_pps, self.verbose
+                    rbsp_payload_bs, nalu_sps, nalu_pps, self.verbose, include_header=True
                 )
                 self.__call("slice", rbsp_payload_bs)
             elif type == nalutypes.NAL_UNIT_TYPE_CODED_SLICE_IDR:
+                rbsp_payload_bs = bytearray(self.getRSBP(start, end + 1))
                 nalu_slice = nalutypes.CodedSliceIDR(
-                    rbsp_payload_bs, nalu_sps, nalu_pps, self.verbose
+                    rbsp_payload_bs, nalu_sps, nalu_pps, self.verbose, include_header=True
                 )
                 self.__call("slice", rbsp_payload_bs)

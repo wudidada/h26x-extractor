@@ -21,8 +21,10 @@ class ParsingTest(unittest.TestCase):
         ex.parse()
 
     def testfileParser(self):
-        ex = h26x_parser.H26xParser('../v/input/small_bunny_1080p_30fps_h264_keyframe_each_second_CAVLC.h264', verbose=False)
-        ex = h26x_parser.H26xParser('/Users/jusbin/Code/h264/data/baseline.264', verbose=False)
+        ex = h26x_parser.H26xParser('/Users/jusbin/Movies/vlc/small_bunny_1080p_30fps_h264_keyframe_each_second_CAVLC'
+                                    '.h264', verbose=False)
+        # ex = h26x_parser.H26xParser('/Users/jusbin/Code/h264/data/baseline.264', verbose=False)
+        # ex = h26x_parser.H26xParser('/Users/jusbin/Movies/vlc/akiyo_cif.h264', verbose=False)
         ex.parse()
 
 
